@@ -6,13 +6,12 @@
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 </head>
 <body>
-  <a-scene embedded-ar 
+  <!-- ✅ ID OBRIGATORIO NA SCENE -->
+  <a-scene id="arScene" embedded-ar 
            mindar-image viewer="ar" 
-           image-target-src="tu-target.mind"
-           color-management="true" 
-           renderer="colorManagement: true, physicallyCorrectLights">
+           image-target-src="tu-target.mind">
 
-    <!-- ASSETS - AQUÍ CARREGA O VIDEO -->
+    <!-- ✅ ASSETS CORRECTOS -->
     <a-assets>
       <video id="mi-video" 
              src="mi-video.webm" 
@@ -20,77 +19,93 @@
              crossorigin="anonymous" 
              playsinline 
              loop 
-             muted></video>
+             muted 
+             webkit-playsinline></video>
     </a-assets>
 
-    <!-- CÁMARA -->
+    <!-- ✅ CÁMARA -->
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- MARCADOR TARGET 0 ( teu .mind ) -->
+    <!-- ✅ TARGET 0 -->
     <a-entity mindar-image-target="targetIndex: 0">
-      
-      <!-- VIDEO que aparece ao detectar -->
-      <a-video id="video-ar" 
+      <!-- ✅ VIDEO CORRECTO -->
+      <a-video id="videoAR" 
                src="#mi-video" 
-               position="0 0 0" 
-               rotation="0 0 0" 
                width="1.2" height="0.8" 
-               visible="false" 
-               shader="flat"></a-video>
+               position="0 0 0" 
+               rotation="0 0 0"
+               visible="false"></a-video>
       
-      <!-- BOX ROJO DEBUG (quita despois) -->
-      <a-box position="0 0.4 -0.1" 
-             color="red" 
+      <!-- ✅ BOX DEBUG -->
+      <a-box position="0 0.4 0" 
+             color="#ff0000" 
              width="1.5" height="0.1" depth="1.5" 
              visible="false"></a-box>
     </a-entity>
   </a-scene>
 
-  <!-- BOTÓN START -->
+  <!-- ✅ BOTÓN MEHORADO -->
   <button id="startBtn" style="
-    position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
-    padding: 20px 40px; background: #007bff; color: white; border: none;
-    border-radius: 30px; font-size: 18px; z-index: 9999;">
-    🔍 Escanear Imán
+    position: fixed; z-index: 9999; bottom: 50px; left: 50%; 
+    transform: translateX(-50%); padding: 20px 40px; 
+    background: linear-gradient(45deg, #007bff, #0056b3); 
+    color: white; border: none; border-radius: 50px; 
+    font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,123,255,0.4);
+    cursor: pointer;">
+    🎥 Escanear Imán AR
   </button>
 
   <script>
-    // ESPERA CARGA
-    window.onload = () => {
-      const video = document.getElementById('mi-video');
-      const videoAR = document.getElementById('video-ar');
-      const boxRojo = document.querySelector('a-box');
-      const escena = document.querySelector('a-scene');
-      const btn = document.getElementById('startBtn');
+    // ✅ VARIABLES GLOBAIS (CRÍTICO)
+    let escena, video, videoAR, boxRojo, btn;
 
-      // CARREGA VIDEO
+    // ✅ INICIALIZACIÓN
+    document.addEventListener('DOMContentLoaded', () => {
+      escena = document.querySelector('#arScene');
+      video = document.getElementById('mi-video');
+      videoAR = document.getElementById('videoAR');
+      boxRojo = document.querySelector('a-box');
+      btn = document.getElementById('startBtn');
+
+      // ✅ PRECARREGA VIDEO
       video.load();
       video.muted = true;
+      console.log('✅ Video cargado:', video.src);
+    });
 
-      btn.onclick = async () => {
-        btn.style.display = 'none';
-        
-        // EVENTOS MINDAR
-        escena.addEventListener('targetFound', (e) => {
-          console.log('✅ MARCADOR DETECTADO');
-          video.play();
-          video.muted = false; // SON
-          videoAR.setAttribute('visible', true);
-          boxRojo.setAttribute('visible', true);
-        });
+    // ✅ EVENT HANDLER BOTÓN
+    document.getElementById('startBtn').onclick = async () => {
+      console.log('🚀 Iniciando AR...');
+      btn.style.display = 'none';
 
-        escena.addEventListener('targetLost', () => {
-          console.log('❌ MARCADOR PERDIDO');
-          video.pause();
-          videoAR.setAttribute('visible', false);
-          boxRojo.setAttribute('visible', false);
-        });
+      // ✅ EVENTOS ANTES DE START
+      escena.addEventListener('targetFound', (e) => {
+        console.log('✅ TARGET DETECTADO!', e.detail);
+        videoAR.setAttribute('visible', true);
+        boxRojo.setAttribute('visible', true);
+        video.play().catch(err => console.error('Video error:', err));
+        setTimeout(() => video.muted = false, 100);
+      });
 
-        // INICIA AR
+      escena.addEventListener('targetLost', () => {
+        console.log('❌ TARGET PERDIDO');
+        videoAR.setAttribute('visible', false);
+        boxRojo.setAttribute('visible', false);
+        video.pause();
+      });
+
+      escena.addEventListener('arReady', () => {
+        console.log('🎉 AR LISTO!');
+      });
+
+      // ✅ INICIO MINDAR
+      try {
         await escena.components['mindar-image'].start();
-        console.log('🚀 AR INICIADO');
+        console.log('✅ MindAR iniciado correctamente');
+      } catch (error) {
+        console.error('❌ Error MindAR:', error);
       }
-    }
+    };
   </script>
 </body>
 </html>
